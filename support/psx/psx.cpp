@@ -9,6 +9,7 @@
 #include "../../spi.h"
 #include "../../hardware.h"
 #include "../../menu.h"
+#include "../../video_gameid.h"
 #include "psx.h"
 #include "mcdheader.h"
 #include "../../cd.h"
@@ -704,6 +705,8 @@ void psx_mount_cd(int f_index, int s_index, const char *filename)
 			{
 				user_io_write_gameid(filename, 0, game_id);
 			}
+
+			video_handle_gameid(GAMEID_SYS_ID_PS1, game_id);
 
 			int name_len = strlen(filename);
 
