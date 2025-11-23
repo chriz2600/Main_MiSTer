@@ -8,6 +8,7 @@
 #include "../../spi.h"
 #include "../../hardware.h"
 #include "../../menu.h"
+#include "../../video_gameid.h"
 #include "../../cheats.h"
 #include "saturn.h"
 
@@ -153,6 +154,18 @@ static int saturn_load_rom(const char *basename, const char *name, int sub_index
 	return 0;
 }
 
+static void trim(char * s)
+{
+	char *p = s;
+	int l = strlen(p);
+	if (!l) return;
+
+	while (p[l - 1] == ' ') p[--l] = 0;
+	while (*p && (*p == ' ')) ++p, --l;
+
+	memmove(s, p, l + 1);
+}
+
 void saturn_set_image(int num, const char *filename)
 {
 	static char last_dir[1024] = {};
@@ -224,6 +237,19 @@ void saturn_set_image(int num, const char *filename)
 				if (satcdd.roadrash_hack) {
 #ifdef SATURN_DEBUG
 					printf("\x1b[32mSaturn: Road Rash games hack!!!\n\x1b[0m");
+#endif // SATURN_DEBUG
+				}
+
+				{
+					char gameid[11] = "";
+					strncpy(gameid, id, sizeof(gameid)-1);
+					trim(gameid);
+					video_handle_gameid(GAMEID_SYS_ID_SATURN, gameid);
+#ifdef SATURN_DEBUG
+					char gamename[140] = "";
+					strncpy(gamename, buf + 0x60, sizeof(gamename)-1);
+					trim(gamename);
+					printf("\x1b[32mSaturn: GameId: [%s] GameName: [%s]\n\x1b[0m", gameid, gamename);
 #endif // SATURN_DEBUG
 				}
 			}
