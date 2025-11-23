@@ -20,6 +20,7 @@
 #include "mat4x4.h"
 #include "menu.h"
 #include "video.h"
+#include "video_gameid.h"
 #include "input.h"
 #include "shmem.h"
 #include "smbus.h"
@@ -4057,3 +4058,36 @@ int video_get_rotated()
 }
 
 
+void video_handle_gameid(gameid_sys_id_t sys_id, const char* gameid)
+{
+	if (cfg.hdr) return;
+	if (!cfg.hdmi_gameid_tx) return;
+	if (!gameid) gameid = "";
+
+	uint8_t data[31] = {
+		0x81, 0x01, 27, 0,
+		0x49, 0x31, 0xF4, 0x01,
+		sys_id,
+		0,
+	};
+
+	int len = strlen(gameid);
+	if (len > 22) len = 22;
+
+	for (int i = 0; i < len; i++) {
+		data[9+i] = gameid[i];
+	}
+
+	{
+		uint16_t checksum = 0;
+		for (uint i = 0; i < sizeof(data) ; i++)
+			checksum += data[i];
+
+		checksum = checksum & 0xFF;
+		checksum = ~checksum + 1;
+
+		data[3] = checksum;
+	}
+
+	hdmi_spare_config(1, data);
+}

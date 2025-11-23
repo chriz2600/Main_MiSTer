@@ -101,6 +101,7 @@ typedef struct {
 	uint8_t lookahead;
 	char main[1024];
 	char vfilter_interlace_default[1023];
+	uint8_t hdmi_gameid_tx;
 } cfg_t;
 
 extern cfg_t cfg;
