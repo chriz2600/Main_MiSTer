@@ -8,6 +8,7 @@
 #include "../../menu.h"
 #include "../../shmem.h"
 #include "../../lib/md5/md5.h"
+#include "../../video_gameid.h"
 
 #include "miniz.h"
 #include "n64.h"
@@ -1543,6 +1544,9 @@ int n64_rom_tx(const char* name, unsigned char idx, uint32_t load_addr, uint32_t
 	char cart_id[CARTID_LENGTH + 1] = { };
 	char internal_name[20 + 1];
 
+	char gameid[21] = "";
+	int gameid_pos = 0;
+
 	memset(patches, 0, sizeof(patches));
 
 	// CRC32 is used for cheat look-up
@@ -1582,6 +1586,26 @@ int n64_rom_tx(const char* name, unsigned char idx, uint32_t load_addr, uint32_t
 		MD5Update(&ctx, buf, chunk);
 
 		if (is_first_chunk) {
+			/*
+				Extract gameid (CRC1-CRC2-Country Code)
+				Cartridge ROM Header (endian normalized):
+				0x10	4	CRC1 (checksum)
+				0x14	4	CRC2
+				0x3E	1	Country Code
+			*/
+			{
+				for (int i = 0x10; i < 0x18; i++)
+				{
+					sprintf(&gameid[gameid_pos], "%02X", buf[i]);
+					gameid_pos += 2;
+					if (gameid_pos == 8) {
+						gameid[gameid_pos++] = '-';
+					}
+				}
+				gameid[gameid_pos++] = '-';
+				sprintf(&gameid[gameid_pos], "%02X", buf[0x3E]);
+			}
+
 			/* Try to detect ROM settings based on header MD5 hash.
 			   For calculating the MD5 hash of the header, we need to make a
 			   copy of the context before calling MD5Final, otherwise the file
@@ -1693,6 +1717,8 @@ int n64_rom_tx(const char* name, unsigned char idx, uint32_t load_addr, uint32_t
 	{
 		user_io_write_gameid(name, file_crc, cart_id);
 	}
+
+	video_handle_gameid(GAMEID_SYS_ID_M64, gameid);
 
 	bool is_patched = false;
 
